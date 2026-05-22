@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  pi-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pi-dashboard
+    image: pi-dashboard:latest
+    
+    # Port mapping
+    ports:
+      - "${PORT:-8080}:8080"
+    
+    # Environment variables
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ALLOW_REBOOT=${ALLOW_REBOOT:-false}
+    
+    # Volume mounts for system access
+    volumes:
+      # System information
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      
+      # Disk information
+      - /:/host/root:ro
+      
+      # Optional: Mount specific partitions for disk monitoring
+      # - /mnt:/host/mnt:ro
+    
+    # Host network mode for accurate network statistics
+    # Alternative: Use bridge mode if you prefer network isolation
+    network_mode: host
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits (optimized for Pi Zero 2W)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 128M
+        reservations:
+          cpus: '0.5'
+          memory: 64M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    
+    # Read-only root filesystem (with exceptions)
+    # Uncomment if you want extra security
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+    #   - /var/run
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Optional: Use bridge network instead of host mode
+# networks:
+#   pi-monitor-net:
+#     driver: bridge

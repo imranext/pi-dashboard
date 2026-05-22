@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Raspberry Pi Zero 2W System Monitoring Dashboard">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>Pi Dashboard - {{ system_info.hostname }}</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                        </svg>
+                    </div>
+                    <div class="header-info">
+                        <h1>Pi Dashboard</h1>
+                        <p class="hostname">{{ system_info.hostname }}</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <div class="connection-status" id="connectionStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- System Info Bar -->
+            <div class="info-bar">
+                <div class="info-item">
+                    <span class="info-label">System</span>
+                    <span class="info-value">{{ system_info.system }} {{ system_info.machine }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Kernel</span>
+                    <span class="info-value">{{ system_info.release }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Uptime</span>
+                    <span class="info-value" id="uptimeDisplay">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Primary Metrics Grid -->
+            <div class="metrics-grid">
+                <!-- CPU Card -->
+                <div class="metric-card gradient-purple">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                <rect x="9" y="9" width="6" height="6"></rect>
+                                <line x1="9" y1="1" x2="9" y2="4"></line>
+                                <line x1="15" y1="1" x2="15" y2="4"></line>
+                                <line x1="9" y1="20" x2="9" y2="23"></line>
+                                <line x1="15" y1="20" x2="15" y2="23"></line>
+                                <line x1="20" y1="9" x2="23" y2="9"></line>
+                                <line x1="20" y1="14" x2="23" y2="14"></line>
+                                <line x1="1" y1="9" x2="4" y2="9"></line>
+                                <line x1="1" y1="14" x2="4" y2="14"></line>
+                            </svg>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title">CPU Usage</h3>
+                            <p class="card-subtitle" id="cpuFreq">0 MHz</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-main">
+                            <span class="metric-value" id="cpuOverall">0</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <div class="progress-ring">
+                            <svg width="140" height="140">
+                                <circle cx="70" cy="70" r="60" class="progress-ring-bg"></circle>
+                                <circle cx="70" cy="70" r="60" class="progress-ring-fill" id="cpuRing"></circle>
+                            </svg>
+                        </div>
+                        <div class="core-grid" id="coreGrid">
+                            <!-- Core usage bars will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Card -->
+                <div class="metric-card gradient-blue">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 6h20M2 12h20M2 18h20M6 2v20M18 2v20"></path>
+                            </svg>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title">Memory</h3>
+                            <p class="card-subtitle" id="memoryDetails">0 GB / 0 GB</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-main">
+                            <span class="metric-value" id="memoryPercent">0</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                        <div class="progress-ring">
+                            <svg width="140" height="140">
+                                <circle cx="70" cy="70" r="60" class="progress-ring-bg"></circle>
+                                <circle cx="70" cy="70" r="60" class="progress-ring-fill" id="memoryRing"></circle>
+                            </svg>
+                        </div>
+                        <div class="memory-breakdown">
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">RAM</span>
+                                <div class="breakdown-bar">
+                                    <div class="breakdown-fill" id="ramBar"></div>
+                                </div>
+                                <span class="breakdown-value" id="ramValue">0%</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-label">Swap</span>
+                                <div class="breakdown-bar">
+                                    <div class="breakdown-fill" id="swapBar"></div>
+                                </div>
+                                <span class="breakdown-value" id="swapValue">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Temperature Card -->
+                <div class="metric-card gradient-orange">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title">Temperature</h3>
+                            <p class="card-subtitle">CPU Core</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-main">
+                            <span class="metric-value" id="tempValue">--</span>
+                            <span class="metric-unit">°C</span>
+                        </div>
+                        <div class="temp-gauge">
+                            <div class="temp-gauge-fill" id="tempGauge"></div>
+                        </div>
+                        <div class="temp-status" id="tempStatus">Normal</div>
+                    </div>
+                </div>
+
+                <!-- Network Card -->
+                <div class="metric-card gradient-green">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="card-title-group">
+                            <h3 class="card-title">Network</h3>
+                            <p class="card-subtitle">Real-time bandwidth</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="network-stats">
+                            <div class="network-stat">
+                                <div class="network-icon download">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M19 12l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div class="network-info">
+                                    <span class="network-label">Download</span>
+                                    <span class="network-value" id="downloadSpeed">0 KB/s</span>
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div class="network-icon upload">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 19V5M5 12l7-7 7 7"></path>
+                                    </svg>
+                                </div>
+                                <div class="network-info">
+                                    <span class="network-label">Upload</span>
+                                    <span class="network-value" id="uploadSpeed">0 KB/s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="network-total">
+                            <div class="total-item">
+                                <span class="total-label">Total ↓</span>
+                                <span class="total-value" id="totalDownload">0 GB</span>
+                            </div>
+                            <div class="total-item">
+                                <span class="total-label">Total ↑</span>
+                                <span class="total-value" id="totalUpload">0 GB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Grid -->
+            <div class="secondary-grid">
+                <!-- Disk Usage -->
+                <div class="secondary-card">
+                    <div class="secondary-header">
+                        <h3 class="secondary-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                            </svg>
+                            Storage
+                        </h3>
+                    </div>
+                    <div class="disk-list" id="diskList">
+                        <!-- Disk partitions will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Top Processes -->
+                <div class="secondary-card">
+                    <div class="secondary-header">
+                        <h3 class="secondary-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 20V10M12 20V4M6 20v-6"></path>
+                            </svg>
+                            Top Processes
+                        </h3>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="cpu">CPU</button>
+                            <button class="tab-btn" data-tab="memory">Memory</button>
+                        </div>
+                    </div>
+                    <div class="process-list" id="processList">
+                        <!-- Process list will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-card">
+                <button class="action-btn" id="exportBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+                    </svg>
+                    Export Metrics
+                </button>
+                <button class="action-btn danger" id="rebootBtn" style="display: none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Reboot System
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Pi Dashboard v1.0 • Last update: <span id="lastUpdate">--</span></p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
