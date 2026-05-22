@@ -54,7 +54,7 @@ A beautiful, lightweight, and responsive system monitoring dashboard designed sp
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/pi-dashboard.git
+git clone https://github.com/imranext/pi-dashboard.git
 cd pi-dashboard
 ```
 
@@ -374,8 +374,8 @@ MIT License - feel free to use this project however you'd like!
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/pi-dashboard/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/pi-dashboard/discussions)
+- **Issues**: [GitHub Issues](https://github.com/imranext/pi-dashboard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/imranext/pi-dashboard/discussions)
 
 ---
 
